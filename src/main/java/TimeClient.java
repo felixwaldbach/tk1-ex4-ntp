@@ -47,7 +47,7 @@ public class TimeClient {
 				request = (NTPRequest) input.readObject();
 				
 				request.calculateOandD();
-				System.out.println("T values: " + request.toString());
+//				System.out.println("T values: " + request.toString());
 				System.out.println("Oi: " + request.o + ", Di: " + request.d);
 				
 				if(minD == null || request.d < minD) {
@@ -60,7 +60,7 @@ public class TimeClient {
 				threadSleep(350);
 			}
 			
-			System.out.println("Time difference: " + minNTPrequest.o + ", Accuracy: ");
+			System.out.println("Time difference (delay): " + minNTPrequest.d + ", Accuracy (offset): " + minNTPrequest.o);
 			
 			socket.close();
 

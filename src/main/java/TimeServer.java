@@ -15,16 +15,22 @@ public class TimeServer {
 	private static int PORT = 27780;
 	private static int OFFSET = 1100;
 	private ServerSocket serverSocket;
+	private ObjectInputStream input;
+	private ObjectOutputStream output;
 
 	public TimeServer() {
 		try {
+			//create the socket server object
 			serverSocket = new ServerSocket(PORT);
 			System.out.println("Server started on port: " + PORT);
-			//
 			
+			//keep listens indefinitely until program terminates
 			while(true) {
+				//create socket
 				Socket socket = serverSocket.accept();
+				//handle the NTP Request message
 				new NTPRequestHandler(socket).run();
+				threadSleep(350);
 			}
 			
 
@@ -62,26 +68,19 @@ public class TimeServer {
 		@Override
 		public void run() {
 			try {
-				ObjectInputStream input;
+				//read from socket to ObjectInputStream object
 				input = new ObjectInputStream(client.getInputStream());
-			
-				ObjectOutputStream output;
 				output = new ObjectOutputStream(client.getOutputStream());
 				
-				// ...
-				
+				//convert ObjectInputStream object to NTPRequest
 				NTPRequest request = (NTPRequest) input.readObject();
 				request.setT2(new Date().getTime() + getRandomDelay() + OFFSET);
 				sendNTPAnswer(request);
 				
-				output.writeObject(request);
-				
-
+				//convert ObjectInputStream object to NTPRequest
 				request = (NTPRequest) input.readObject();
 				request.setT4(new Date().getTime() + getRandomDelay() + OFFSET);
 				sendNTPAnswer(request);
-				
-				output.writeObject(request);
 				
 				client.close();
 				
@@ -92,11 +91,18 @@ public class TimeServer {
 			}
 		}
 		
+		//generate random integer between 10 to 100 as delay
 		private int getRandomDelay() {
 			return ((int)(Math.random() * ((100 - 10) + 1)) + 10);
 		}
 
 		private void sendNTPAnswer(NTPRequest request) {
+			try {
+				//write to socket using ObjectOutputStream
+				output.writeObject(request);
+			} catch(IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 	}

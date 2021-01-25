@@ -18,6 +18,8 @@ public class TimeClient {
 	private Double minD;
 	private NTPRequest minNTPrequest;
 	private Socket socket;
+	private ObjectInputStream input;
+	private ObjectOutputStream output;
 
 	public TimeClient() {
 
@@ -27,29 +29,32 @@ public class TimeClient {
 			
 			for (int i = 0; i < 10; i++) {
 				System.out.println("Sending new request...");
+				//establish socket connection to server
 				socket = new Socket(InetAddress.getByName(hostUrl), PORT);
 							
-				ObjectOutputStream output;
+				//write to socket using ObjectOutputStream
 				output = new ObjectOutputStream(socket.getOutputStream());
 				
 				NTPRequest request = new NTPRequest();
 				request.setT1(new Date().getTime());
-				output.writeObject(request);
+				sendNTPRequest(request);
 				
-				ObjectInputStream input;
+				//read the server response message using ObjectInputStream
 				input = new ObjectInputStream(socket.getInputStream());
-								
+				//convert ObjectInputStream object to NTPRequest			
 				request = (NTPRequest) input.readObject();
 				request.setT3(new Date().getTime() + getRandomDelay());
+				sendNTPRequest(request);
 				
-				output.writeObject(request);
-				
+				//convert ObjectInputStream object to NTPRequest
 				request = (NTPRequest) input.readObject();
 				
+				//calculate Offset and Delay
 				request.calculateOandD();
 //				System.out.println("T values: " + request.toString());
 				System.out.println("Oi: " + request.o + ", Di: " + request.d);
 				
+				//find the smallest delay and its corresponding NTPRequest
 				if(minD == null || request.d < minD) {
 					minD = request.d;
 					minNTPrequest = request;
@@ -57,9 +62,11 @@ public class TimeClient {
 				
 				socket.close();
 				
+				//wait 350ms between two measurements
 				threadSleep(350);
 			}
 			
+			//print time difference and the corresponding accuracy
 			System.out.println("Time difference (delay): " + minNTPrequest.d + ", Accuracy (offset): " + minNTPrequest.o);
 			
 			socket.close();
@@ -77,8 +84,14 @@ public class TimeClient {
 	}
 
 	private void sendNTPRequest(NTPRequest request) {
+		try {
+			output.writeObject(request);
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
+	//generate random integer between 10 to 100 as delay
 	private int getRandomDelay() {
 		return ((int)(Math.random() * ((100 - 10) + 1)) + 10);
 	}
